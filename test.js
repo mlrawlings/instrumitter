@@ -55,7 +55,6 @@ describe('instrumitter', () => {
         var objectEvents = instrumitter(object, ['test:invoke'], { stack:true })
         objectEvents.once('test:invoke', fn => {
             expect(fn.stack[0].file).to.equal(__filename)
-            expect(fn.stack[0].name).to.be.null
             expect(fn.stack[0].line).to.be.above(0)
             expect(fn.stack[0].char).to.be.above(0)
             expect(Object.keys(fn.stack[0]).length).to.equal(4)
