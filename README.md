@@ -146,6 +146,20 @@ Because adding stack traces introduces a bit more overhead they are disabled by 
 ```js
 instrumitter('http', ['get:return'], { stack:true });
 ```
+
+```js
+{
+    // ...
+    stack:[{
+        name,   // name of the function in the stack
+        file,   // file in which the function resides
+        line,   // file line number
+        char    // line character position
+    }],
+    // ...
+}
+```
+
 ## More Examples
 
 Capturing the methods of a class that is exported by a module:
