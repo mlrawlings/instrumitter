@@ -37,94 +37,123 @@ module.exports = function instrumitter(object, capture, options) {
 }
 
 function wrapFn(fn, capture, emitter, options) {
-    var events = capture.events
     var wrappedFn = function() {
-        var args = Array.from(arguments)
-        var callback = args[args.length-1]
-
         var data = {
             this:this,
-            arguments:args
+            arguments:Array.from(arguments)
         }
 
-        if(options.stack) {
-            data.stack = []
-        }
+        handleInvokeEvent(data, capture, emitter, options)
+        handleCallbackEvent(data, capture, emitter)
 
-        if(events.callback && !(callback instanceof Function)) {
-            callback = function(){}
-            args = args.concat([callback])
-        }
-
-        if((events.all || events.callback) && callback instanceof Function) {
-            args = [].concat(args)
-            var wrappedCallback = args[args.length-1] = function() {
-                var time = hrTimeToMilliSeconds(process.hrtime())
-                data.callback = {
-                    this:this,
-                    arguments:Array.from(arguments),
-                    error:arguments[0],
-                    value:arguments[1],
-                    time,
-                    elapsedTime:time - data.time
-                }
-                emitter.emit(capture.fn+':callback', data)
-                callback.apply(this, arguments)
-            }
-        }
-
-        if(events.invoke || events.all) {
-            emitter.emit(capture.fn+':invoke', data, args)
-        }
-
+        var args = data.arguments
         var before = process.hrtime()
         var result = fn.apply(this, args)
-        var after = hrTimeToMilliSeconds(process.hrtime())
+        var after = process.hrtime()
 
-        data.time = hrTimeToMilliSeconds(before)
-        data.return = { value:result, time:after }
-        data.return.elapsedTime = data.return.time - data.time
-
-        if(events.return || events.all) {
-            emitter.emit(capture.fn+':return', data)
-        }
-
-        if(result.then instanceof Function
-            && result.catch instanceof Function
-            && (events.promise || events.all)
-        ) {
-            result.then(function(value) {
-                var time = hrTimeToMilliSeconds(process.hrtime())
-                data.promise = {
-                    time,
-                    value,
-                    elapsedTime:time - data.time
-                }
-                emitter.emit(capture.fn+':promise', data)
-            }).catch(function(error) {
-                var time = hrTimeToMilliSeconds(process.hrtime())
-                data.promise = {
-                    time,
-                    error,
-                    elapsedTime:time - data.time
-                }
-                emitter.emit(capture.fn+':promise', data)
-            })
-        }
+        handleReturnEvent(data, capture, emitter, result, before, after)
+        handlePromiseEvent(data, capture, emitter)
 
         return result
     }
 
-    Object.defineProperties(wrappedFn, {
-        name: { value:fn.name },
-        length: { value:fn.length }
-    })
-
-    Object.keys(fn).forEach(key => {
-        wrappedFn[key] = fn[key]
-    })
+    copyFnProperties(wrappedFn, fn)
 
     return wrappedFn
+}
+
+function copyFnProperties(target, source) {
+    Object.defineProperties(target, {
+        name: { value:source.name },
+        length: { value:source.length }
+    })
+
+    Object.keys(source).forEach(key => {
+        target[key] = source[key]
+    })
+}
+
+function handleInvokeEvent(data, capture, emitter, options) {
+    if(options.stack) {
+        data.stack = []
+    }
+
+    if(hasEvent(capture, 'invoke')) {
+        emitter.emit(capture.fn+':invoke', data)
+    }
+}
+
+function handleReturnEvent(data, capture, emitter, result, before, after) {
+    data.time = hrTimeToMilliSeconds(before)
+    data.return = { value:result, time:hrTimeToMilliSeconds(after) }
+    data.return.elapsedTime = data.return.time - data.time
+
+    if(hasEvent(capture, 'return')) {
+        emitter.emit(capture.fn+':return', data)
+    }
+}
+
+function handleCallbackEvent(data, capture, emitter) {
+    var args = data.arguments
+    var callback = args[args.length-1]
+
+    if(capture.events.callback && !isFunction(callback)) {
+        callback = function(){}
+        args = args.push(callback)
+    }
+
+    if(hasEvent(capture, 'callback') && isFunction(callback)) {
+        args[args.length-1] = function() {
+            var time = hrTimeToMilliSeconds(process.hrtime())
+            data.callback = {
+                this:this,
+                arguments:Array.from(arguments),
+                error:arguments[0],
+                value:arguments[1],
+                time,
+                elapsedTime:time - data.time
+            }
+            emitter.emit(capture.fn+':callback', data)
+            callback.apply(this, arguments)
+        }
+    }
+}
+
+function handlePromiseEvent(data, capture, emitter) {
+    var result = data.return
+
+    if(isPromise(result) && hasEvent(capture, 'promise')) {
+        result.then(function(value) {
+            var time = hrTimeToMilliSeconds(process.hrtime())
+            data.promise = {
+                time,
+                value,
+                elapsedTime:time - data.time
+            }
+            emitter.emit(capture.fn+':promise', data)
+        }).catch(function(error) {
+            var time = hrTimeToMilliSeconds(process.hrtime())
+            data.promise = {
+                time,
+                error,
+                elapsedTime:time - data.time
+            }
+            emitter.emit(capture.fn+':promise', data)
+        })
+    }
+}
+
+function hasEvent(capture, eventName) {
+    return capture.events.all || capture.events[eventName]
+}
+
+function isPromise(promise) {
+    return promise.then instanceof Function
+        && promise.catch instanceof Function
+}
+
+function isFunction(fn) {
+    return fn instanceof Function
 }
 
 function getCallerFilePath() {
@@ -146,15 +175,14 @@ function getCallStack() {
 function parseEvents(string) {
     var parts = string.split(':')
     var fn = parts.splice(0, 1)[0]
-    var events = {}
-
-    parts.forEach(part => {
+    var events = parts.reduce((events, part) => {
         if(part == '*') {
             events.all = true
         } else {
             events[part] = true
         }
-    })
+        return events
+    }, {})
 
     return { fn, events }
 }
