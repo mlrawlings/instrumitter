@@ -1,8 +1,9 @@
 # Instrumitter
 
-Instrumitter is a module that makes it dead simple to instrument function calls and
-emit information about those calls so you can get insight into what is happening
-in your node.js application.
+[![Build Status](https://travis-ci.org/mlrawlings/instrumitter.svg?branch=master)](https://travis-ci.org/mlrawlings/instrumitter)
+[![Coverage Status](https://coveralls.io/repos/github/mlrawlings/instrumitter/badge.svg?branch=master)](https://coveralls.io/github/mlrawlings/instrumitter?branch=master)
+
+Instrumitter makes it dead simple to instrument function calls and emit information about those calls so you can get insight into what is happening in your node.js application.
 
 ```
 npm install instrumitter

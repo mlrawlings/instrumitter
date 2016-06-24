@@ -1,0 +1,33 @@
+{
+  "name": "instrumitter",
+  "version": "1.0.0",
+  "description": "Instrument your node.js code and emit data about what's happening",
+  "main": "index.js",
+  "scripts": {
+    "test": "istanbul cover _mocha --include-all-sources -- --ui bdd --reporter spec ./test",
+    "coveralls": "cat ./coverage/lcov.info | coveralls"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mlrawlings/instrumitter.git"
+  },
+  "keywords": [
+    "instrument",
+    "emitter"
+  ],
+  "author": "Michael Rawlings <ml.rawlings@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mlrawlings/instrumitter/issues"
+  },
+  "homepage": "https://github.com/mlrawlings/instrumitter#readme",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "coveralls": "^2.11.9",
+    "istanbul": "^0.4.4",
+    "mocha": "^2.5.3"
+  },
+  "dependencies": {
+    "resolve": "^1.1.7"
+  }
+}
