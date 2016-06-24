@@ -14,6 +14,23 @@ describe('instrumitter', () => {
         })
         http.get('http://www.google.com')
     })
+    it('should allow passing an object', done => {
+        var object = {
+            test:function() {
+                return 123
+            }
+        }
+
+        var objectEvents = instrumitter(object, ['test:return'])
+        objectEvents.once('test:return', fn => {
+            expect(fn.arguments).to.eql(['abc'])
+            expect(fn.return.value).to.eql(123)
+            expect(fn.return.elapsedTime).to.be.above(0)
+            done()
+        })
+
+        object.test('abc')
+    })
     it('should have the same name and properties as the original function')
     it('should handle callbacks', done => {
         var http = require('http')
