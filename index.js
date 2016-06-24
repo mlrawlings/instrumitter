@@ -75,7 +75,7 @@ function copyFnProperties(target, source) {
 
 function handleInvokeEvent(data, capture, emitter, options) {
     if(options.stack) {
-        data.stack = []
+        data.stack = getCallStack(2)
     }
 
     if(hasEvent(capture, 'invoke')) {
@@ -164,12 +164,19 @@ function getCallerFilePath() {
     return stack[2].getFileName()
 }
 
-function getCallStack() {
+function getCallStack(levelsAbove) {
     var origPrepareStackTrace = Error.prepareStackTrace
     Error.prepareStackTrace = (_, stack) => stack
     var stack = (new Error).stack
     Error.prepareStackTrace = origPrepareStackTrace
-    return stack.slice(2).map(s => s)
+    return stack.slice((levelsAbove||0)+1).map(callsite => {
+        return {
+            name:callsite.getFunctionName(),
+            file:callsite.getFileName(),
+            line:callsite.getLineNumber(),
+            char:callsite.getColumnNumber()
+        }
+    })
 }
 
 function parseEvents(string) {

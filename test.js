@@ -48,7 +48,21 @@ describe('instrumitter', () => {
         })
     })
     it('should handle promises')
-    it('should include the stack when the option is present')
+    it('should include the stack when the option is present', done => {
+        var object = {
+            test: function() { return 123 }
+        }
+        var objectEvents = instrumitter(object, ['test:invoke'], { stack:true })
+        objectEvents.once('test:invoke', fn => {
+            expect(fn.stack[0].file).to.equal(__filename)
+            expect(fn.stack[0].name).to.be.null
+            expect(fn.stack[0].line).to.be.above(0)
+            expect(fn.stack[0].char).to.be.above(0)
+            expect(Object.keys(fn.stack[0]).length).to.equal(4)
+            done()
+        })
+        object.test()
+    })
     it('should allow you to instrument a function exported as `module.exports`')
     it('should throw if you try to instrument a function directly')
     it('should instrument all properties of an object that are functions when using a wildcard')
