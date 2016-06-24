@@ -8,7 +8,7 @@ module.exports = function instrumitter(object, capture, options) {
     options = options || {}
 
     if(typeof object === 'string') {
-        modulePath = resolve.sync(object, { basedir:getCallerFilePath() })
+        modulePath = resolve.sync(object, { basedir:path.dirname(getCallerFilePath()) })
         object = require(modulePath)
     }
 
