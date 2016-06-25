@@ -30,6 +30,10 @@ module.exports = function instrumitter(object, capture, options) {
             key  = modulePath
         }
 
+        if(!isFunction(parent[key])) throw new Error(
+            'The property you are trying to instrument is not a function'
+        )
+
         parent[key] = wrapFn(parent[key], capture, emitter, options)
     })
 

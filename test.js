@@ -108,6 +108,11 @@ describe('instrumitter', () => {
             instrumitter(function(){}, [':return'])
         }).to.throw(/instrument a function directly/)
     })
+    it('should throw if you try to instrument a property that is not a function', () => {
+        expect(() => {
+            instrumitter({}, ['abc:return'])
+        }).to.throw(/not a function/)
+    })
     it('should instrument all properties of an object that are functions when using a wildcard')
     it('should not reinstument a function, but rather emit addtional events if they are requested')
 })
