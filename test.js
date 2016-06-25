@@ -31,7 +31,14 @@ describe('instrumitter', () => {
 
         object.test('abc')
     })
-    it('should have the same name and properties as the original function')
+    it('should have the same name and properties as the original function', () => {
+        var object = { test:function testName(a, b, c) {} }
+        object.test.property = 123
+        var objectEmitter = instrumitter(object, ['test:return'])
+        expect(object.test.name).to.equal('testName')
+        expect(object.test.length).to.equal(3)
+        expect(object.test.property).to.equal(123)
+    })
     it('should handle callbacks', done => {
         var http = require('http')
         var called
