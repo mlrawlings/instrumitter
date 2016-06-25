@@ -54,6 +54,7 @@ describe('instrumitter', () => {
             done()
         })
     })
+    it('should force a callback when the `:callback` event is requested')
     it('should handle promises', done => {
         var object = {
             test: function() {
