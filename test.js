@@ -25,7 +25,7 @@ describe('instrumitter', () => {
         objectEvents.once('test:return', fn => {
             expect(fn.arguments).to.eql(['abc'])
             expect(fn.return.value).to.eql(123)
-            expect(fn.return.elapsedTime).to.be.above(0)
+            expect(fn.return.elapsed).to.be.above(0)
             done()
         })
 
@@ -39,7 +39,7 @@ describe('instrumitter', () => {
             called = true
             expect(fn.callback.arguments.length).to.equal(1)
             expect(fn.callback.arguments[0]).to.be.instanceof(http.IncomingMessage)
-            expect(fn.callback.elapsedTime).to.be.above(0)
+            expect(fn.callback.elapsed).to.be.above(0)
         })
         http.get('http://www.google.com', (response) => {
             expect(called).to.be.true
@@ -47,7 +47,24 @@ describe('instrumitter', () => {
             done()
         })
     })
-    it('should handle promises')
+    it('should handle promises', done => {
+        var object = {
+            test: function() {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        resolve(123)
+                    }, 100)
+                })
+            }
+        }
+        var objectEvents = instrumitter(object, ['test:promise'])
+        objectEvents.on('test:promise', fn => {
+            expect(fn.promise.value).to.equal(123)
+            done()
+        })
+        object.test()
+    })
+    it('should handle promises that reject')
     it('should include the stack when the option is present', done => {
         var object = {
             test: function() { return 123 }

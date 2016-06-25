@@ -86,7 +86,7 @@ function handleInvokeEvent(data, capture, emitter, options) {
 function handleReturnEvent(data, capture, emitter, result, before, after) {
     data.time = hrTimeToMilliSeconds(before)
     data.return = { value:result, time:hrTimeToMilliSeconds(after) }
-    data.return.elapsedTime = data.return.time - data.time
+    data.return.elapsed = data.return.time - data.time
 
     if(hasEvent(capture, 'return')) {
         emitter.emit(capture.fn+':return', data)
@@ -111,7 +111,7 @@ function handleCallbackEvent(data, capture, emitter) {
                 error:arguments[0],
                 value:arguments[1],
                 time,
-                elapsedTime:time - data.time
+                elapsed:time - data.time
             }
             emitter.emit(capture.fn+':callback', data)
             callback.apply(this, arguments)
@@ -120,7 +120,7 @@ function handleCallbackEvent(data, capture, emitter) {
 }
 
 function handlePromiseEvent(data, capture, emitter) {
-    var result = data.return
+    var result = data.return.value
 
     if(isPromise(result) && hasEvent(capture, 'promise')) {
         result.then(function(value) {
@@ -128,7 +128,7 @@ function handlePromiseEvent(data, capture, emitter) {
             data.promise = {
                 time,
                 value,
-                elapsedTime:time - data.time
+                elapsed:time - data.time
             }
             emitter.emit(capture.fn+':promise', data)
         }).catch(function(error) {
@@ -136,7 +136,7 @@ function handlePromiseEvent(data, capture, emitter) {
             data.promise = {
                 time,
                 error,
-                elapsedTime:time - data.time
+                elapsed:time - data.time
             }
             emitter.emit(capture.fn+':promise', data)
         })

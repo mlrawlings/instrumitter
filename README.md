@@ -21,10 +21,10 @@ var httpEvents = instrumitter('http', ['get:return:callback'])
 httpEvents
     .on('get:return', function(fn) {
         console.log('http.get was called with', fn.arguments)
-        console.log('http.get returned', fn.return.value, 'in', fn.return.elapsedTime, 'ms');
+        console.log('http.get returned', fn.return.value, 'in', fn.return.elapsed, 'ms');
     })
     .on('get:callback', function(fn) {
-        console.log('http.get calledback ', fn.callback.value, 'in', fn.callback.elapsedTime, 'ms');
+        console.log('http.get calledback ', fn.callback.value, 'in', fn.callback.elapsed, 'ms');
     });
 ```
 
@@ -80,7 +80,7 @@ A `return` object will be added to the emitted data:
         value,          // return value
         error,          // error, if one was thrown
         time,           // time return was called
-        elapsedTime     // time since the invocation of the function
+        elapsed     // time since the invocation of the function
     }
 }
 ```
@@ -99,7 +99,7 @@ and will contain the following data:
         value,          // return value
         error,          // error, if one was thrown
         time,           // time return was called
-        elapsedTime     // time since the invocation of the function
+        elapsed     // time since the invocation of the function
     },
     callback: {
         this,           // the context the callback was run in
@@ -107,7 +107,7 @@ and will contain the following data:
         error,          // the first argument passed to the callback
         value,          // the second argument passed to the callback
         time,           // the time the callback was called
-        elapsedTime,    // time since the invocation of the original function
+        elapsed,    // time since the invocation of the original function
     }
 }
 ```
@@ -126,13 +126,13 @@ and will contain the following data:
         value,          // return value
         error,          // error, if one was thrown
         time,           // time return was called
-        elapsedTime     // time since the invocation of the function
+        elapsed     // time since the invocation of the function
     },
     promise: {
         value,          // the resolved value of the promise
         error,          // error, if one was thrown
         time,           // the time the promise was resolved
-        elapsedTime,    // time since the invocation of the original function
+        elapsed,    // time since the invocation of the original function
     }
 }
 ```
