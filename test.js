@@ -64,7 +64,23 @@ describe('instrumitter', () => {
         })
         object.test()
     })
-    it('should handle promises that reject')
+    it('should handle promises that reject', done => {
+        var object = {
+            test: function() {
+                return new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        reject(new Error())
+                    }, 100)
+                })
+            }
+        }
+        var objectEvents = instrumitter(object, ['test:promise'])
+        objectEvents.on('test:promise', fn => {
+            expect(fn.promise.error).to.be.an.instanceof(Error)
+            done()
+        })
+        object.test()
+    })
     it('should include the stack when the option is present', done => {
         var object = {
             test: function() { return 123 }
