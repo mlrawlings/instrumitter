@@ -1,11 +1,11 @@
 var instrumitter = require('.')
-var httpEmitter = instrumitter('http', ['get:*'])
+var httpEvents = instrumitter('http', ['get:*'])
 var expect = require('chai').expect
 
 describe('instrumitter', () => {
     it('should emit invocations', done => {
         var http = require('http')
-        httpEmitter.once('get:invoke', fn => {
+        httpEvents.once('get:invoke', fn => {
             expect(fn).to.eql({
                 this:http,
                 arguments:['http://www.google.com']
@@ -34,7 +34,7 @@ describe('instrumitter', () => {
     it('should have the same name and properties as the original function', () => {
         var object = { test:function testName(a, b, c) {} }
         object.test.property = 123
-        var objectEmitter = instrumitter(object, ['test:return'])
+        var objectEvents = instrumitter(object, ['test:return'])
         expect(object.test.name).to.equal('testName')
         expect(object.test.length).to.equal(3)
         expect(object.test.property).to.equal(123)
@@ -42,7 +42,7 @@ describe('instrumitter', () => {
     it('should handle callbacks', done => {
         var http = require('http')
         var called
-        httpEmitter.once('get:callback', fn => {
+        httpEvents.once('get:callback', fn => {
             called = true
             expect(fn.callback.arguments.length).to.equal(1)
             expect(fn.callback.arguments[0]).to.be.instanceof(http.IncomingMessage)
@@ -124,5 +124,8 @@ describe('instrumitter', () => {
         }).to.throw(/not a function/)
     })
     it('should instrument all properties of an object that are functions when using a wildcard')
-    it('should not reinstument a function, but rather emit addtional events if they are requested')
+    it('should not reinstument an object/function, but rather emit addtional events if they are requested', () => {
+        var httpEvents2 = instrumitter('http', ['request:callback'])
+        expect(httpEvents2).to.equal(httpEvents)
+    })
 })

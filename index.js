@@ -1,22 +1,45 @@
 var path = require('path')
 var EventEmitter = require('events').EventEmitter
 var resolve = require('resolve')
+var _cache = new WeakMap()
 
 module.exports = function instrumitter(object, capture, options) {
     var modulePath
-    var emitter = new EventEmitter()
-    options = options || {}
 
     if(typeof object === 'string') {
         modulePath = resolve.sync(object, { basedir:path.dirname(getCallerFilePath()) })
         object = require(modulePath)
     }
 
+    var cache = _cache.get(object)
+
+    if(!cache) {
+        cache = { events:{}, options:{} }
+        _cache.set(object, cache)
+    }
+
+    var emitter = cache.emitter = cache.emitter || new EventEmitter()
+
+    Object.keys(options || {}).forEach(option => {
+        cache.options[option] = options[option]
+    })
+
+    options = cache.options
+
     capture.forEach(capture => {
-        var parent, key
         capture = parseEvents(capture)
-        parent = object
-        key = capture.fn
+
+        var parent = object
+        var key = capture.fn
+
+        if(cache.events[key]) {
+            Object.keys(capture.events).forEach(event => {
+                cache.events[key][event] = capture[event]
+            })
+            return
+        }
+
+        cache.events[key] = capture.events
 
         if(!capture.fn) {
             if(!modulePath) throw new Error(
