@@ -1,55 +1,59 @@
 var path = require('path')
 var EventEmitter = require('events').EventEmitter
 var resolve = require('resolve')
-var _cache = new WeakMap()
+var _cache = new Map()
 
 module.exports = function instrumitter(object, capture, options) {
-    var modulePath
+    var instrumitter = getInstrumitter(object, options)
+    ensureCapture(instrumitter, capture)
+    return instrumitter.emitter
+}
+
+function getInstrumitter(object, options) {
+    var modulePath, instrumitter
 
     if(typeof object === 'string') {
         modulePath = resolve.sync(object, { basedir:path.dirname(getCallerFilePath()) })
         object = require(modulePath)
     }
 
-    var cache = _cache.get(object)
+    instrumitter = _cache.get(object)
 
-    if(!cache) {
-        cache = { events:{}, options:{} }
-        _cache.set(object, cache)
+    if(!instrumitter) {
+        instrumitter = { object, modulePath, events:{}, options:{}, emitter:new EventEmitter() }
+        _cache.set(object, instrumitter)
     }
 
-    var emitter = cache.emitter = cache.emitter || new EventEmitter()
-
     Object.keys(options || {}).forEach(option => {
-        cache.options[option] = options[option]
+        instrumitter.options[option] = options[option]
     })
 
-    options = cache.options
+    return instrumitter
+}
 
-    capture.forEach(capture => {
-        capture = parseEvents(capture)
-
-        var parent = object
+function ensureCapture(instrumitter, capture) {
+    capture.map(parseEvents).forEach(capture => {
+        var parent = instrumitter.object
         var key = capture.fn
 
-        if(cache.events[key]) {
+        if(instrumitter.events[key]) {
             Object.keys(capture.events).forEach(event => {
-                cache.events[key][event] = capture[event]
+                instrumitter.events[key][event] = capture[event]
             })
             return
         }
 
-        cache.events[key] = capture.events
+        instrumitter.events[key] = capture.events
 
         if(!capture.fn) {
-            if(!modulePath) throw new Error(
+            if(!instrumitter.modulePath) throw new Error(
                 'You cannot instrument a function directly.  ' +
                 'You must pass an object that the function is ' +
                 'a property of, or the path to the module that ' +
                 'exports the function.'
             )
             capture.fn = ''
-            parent = require.cache[modulePath]
+            parent = require.cache[instrumitter.modulePath]
             key = 'exports'
         }
 
@@ -57,10 +61,8 @@ module.exports = function instrumitter(object, capture, options) {
             'The property you are trying to instrument is not a function'
         )
 
-        parent[key] = wrapFn(parent[key], capture, emitter, options)
+        parent[key] = wrapFn(parent[key], capture, instrumitter.emitter, instrumitter.options)
     })
-
-    return emitter
 }
 
 function wrapFn(fn, capture, emitter, options) {

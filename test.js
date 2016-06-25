@@ -125,7 +125,7 @@ describe('instrumitter', () => {
     })
     it('should instrument all properties of an object that are functions when using a wildcard')
     it('should not reinstument an object/function, but rather emit addtional events if they are requested', () => {
-        var httpEvents2 = instrumitter('http', ['request:callback'])
+        var httpEvents2 = instrumitter('http', ['request:callback', 'get:callback'])
         expect(httpEvents2).to.equal(httpEvents)
     })
 })
