@@ -103,7 +103,11 @@ describe('instrumitter', () => {
         object.test()
     })
     it('should allow you to instrument a function exported as `module.exports`')
-    it('should throw if you try to instrument a function directly')
+    it('should throw if you try to instrument a function directly', () => {
+        expect(() => {
+            instrumitter(function(){}, [':return'])
+        }).to.throw(/instrument a function directly/)
+    })
     it('should instrument all properties of an object that are functions when using a wildcard')
     it('should not reinstument a function, but rather emit addtional events if they are requested')
 })
