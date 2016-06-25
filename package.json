@@ -25,6 +25,7 @@
     "chai": "^3.5.0",
     "coveralls": "^2.11.9",
     "istanbul": "^0.4.4",
+    "left-pad": "^1.1.0",
     "mocha": "^2.5.3"
   },
   "dependencies": {

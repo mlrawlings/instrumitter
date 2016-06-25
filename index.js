@@ -26,8 +26,8 @@ module.exports = function instrumitter(object, capture, options) {
                 'exports the function.'
             )
             capture.fn = ''
-            parent = require.cache
-            key  = modulePath
+            parent = require.cache[modulePath]
+            key = 'exports'
         }
 
         if(!isFunction(parent[key])) throw new Error(

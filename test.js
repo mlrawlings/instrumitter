@@ -102,7 +102,16 @@ describe('instrumitter', () => {
         })
         object.test()
     })
-    it('should allow you to instrument a function exported as `module.exports`')
+    it('should allow you to instrument a function exported as `module.exports`', done => {
+        var padEvents = instrumitter('left-pad', [':return'])
+        var pad = require('left-pad')
+        padEvents.on(':return', fn => {
+            expect(fn.arguments).to.eql(['foo', 5])
+            expect(fn.return.value).to.equal('  foo')
+            done()
+        })
+        pad('foo', 5)
+    })
     it('should throw if you try to instrument a function directly', () => {
         expect(() => {
             instrumitter(function(){}, [':return'])
