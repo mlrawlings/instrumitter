@@ -13,7 +13,7 @@ npm install instrumitter
 
 ```js
 var instrumitter = require('instrumitter');
-var httpEvents = instrumitter('http', ['get:return:callback'])
+var httpEvents = instrumitter('http', ['get'])
 
 // now we can listen for any time require('http').get is called
 // and get information about its return value and callback value
@@ -33,25 +33,19 @@ httpEvents
 Instrumitter exposes a single function with the following signature:
 
 ```cpp
-instrumitter(object, events[, options])
+instrumitter(object, methods)
 ```
 
 - **`object`**: An object that has a function as a property that we want to listen to.
     - If `object` is a string, it will be treated as a path to require a module
-- **`events`**: An array of strings in the format `'functionName:eventName'`.
-    - Multiple events can be strung together: `functionName:event1:event2`.
-    - Wildcards
-        - A wild card event can be to capture all events: `functionName:*`
-        - A wild card function can be used to capture all function properties: `*:return`
-        - And you can use a wildcard on both sides: `*:*`
-- **`options`**: An optional [options](#options) object
-
+- **`events`**: An array of strings specifying the methods to capture.
+    - A wild card method name can be to capture all methods: `*`
 
 ### Events
 
 Instrumitter supports four events: `invoke`, `return`, `callback`, and `promise`.  The data object that is emitted for the `invoke` event will be the same data object that is passed to subsequent events, but each event will add its own data to the object.
 
-#### Invoke
+#### invoke
 
 `invoke` is emitted at the time that the function is called.
 At this point the emitted data looks like this:
@@ -141,10 +135,13 @@ and will contain the following data:
 
 #### Adding Stack Traces
 
-Because adding stack traces introduces a bit more overhead they are disabled by default.  You can turn them on when you create your instrumitter by adding `stack:true` to an options object:
+Because adding stack traces introduces a bit more overhead they are disabled by default.  You can turn them on when you listen to your instrumitter by adding `stack:true` to an options object:
 
 ```js
-instrumitter('http', ['get:return'], { stack:true });
+var httpEvents = instrumitter('http', ['get']);
+httpEvents.on('get:return', { stack:true }, function(fn) {
+    console.log(fn.stack)
+})
 ```
 
 ```js
@@ -166,7 +163,7 @@ Capturing the methods of a class that is exported by a module:
 
 ```js
 var instrumitter = require('instrumitter');
-var FooEvents = instrumitter(require('./Foo').prototype, ['bar:return'])
+var FooEvents = instrumitter(require('./Foo').prototype, ['bar'])
 
 FooEvents.on('bar:return', function(fn) {
     console.log(fn.return.value)
@@ -177,7 +174,7 @@ Capturing a function exported by a module:
 
 ```js
 var instrumitter = require('instrumitter');
-var doSomethingEvents = instrumitter('./doSomething', [':return'])
+var doSomethingEvents = instrumitter('./doSomething', ['module.exports'])
 
 doSomethingEvents.on(':return', function(fn) {
     console.log(fn.return.value)
