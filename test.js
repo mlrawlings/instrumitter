@@ -1,5 +1,5 @@
 var instrumitter = require('.')
-var httpEvents = instrumitter('http', ['get'])
+var httpEvents = instrumitter('http').watch('get')
 var expect = require('chai').expect
 
 describe('instrumitter', () => {
@@ -21,7 +21,7 @@ describe('instrumitter', () => {
             }
         }
 
-        var objectEvents = instrumitter(object, ['test'])
+        var objectEvents = instrumitter(object).watch('test')
         objectEvents.once('test:return', fn => {
             expect(fn.arguments).to.eql(['abc'])
             expect(fn.return.value).to.eql(123)
@@ -34,7 +34,7 @@ describe('instrumitter', () => {
     it('should have the same name and properties as the original function', () => {
         var object = { test:function testName(a, b, c) {} }
         object.test.property = 123
-        var objectEvents = instrumitter(object, ['test'])
+        var objectEvents = instrumitter(object).watch('test')
         expect(object.test.name).to.equal('testName')
         expect(object.test.length).to.equal(3)
         expect(object.test.property).to.equal(123)
@@ -65,7 +65,7 @@ describe('instrumitter', () => {
                 })
             }
         }
-        var objectEvents = instrumitter(object, ['test'])
+        var objectEvents = instrumitter(object).watch('test')
         objectEvents.on('test:promise', fn => {
             expect(fn.promise.value).to.equal(123)
             done()
@@ -82,7 +82,7 @@ describe('instrumitter', () => {
                 })
             }
         }
-        var objectEvents = instrumitter(object, ['test'])
+        var objectEvents = instrumitter(object).watch('test')
         objectEvents.on('test:promise', fn => {
             expect(fn.promise.error).to.be.an.instanceof(Error)
             done()
@@ -93,7 +93,7 @@ describe('instrumitter', () => {
         var object = {
             test: function() { return 123 }
         }
-        var objectEvents = instrumitter(object, ['test'])
+        var objectEvents = instrumitter(object).watch('test')
         objectEvents.once('test:invoke', { stack:true }, fn => {
             expect(fn.stack[0].file).to.equal(__filename)
             expect(fn.stack[0].line).to.be.above(0)
@@ -104,7 +104,7 @@ describe('instrumitter', () => {
         object.test()
     })
     it('should allow you to instrument a function exported as `module.exports`', done => {
-        var padEvents = instrumitter('left-pad', ['module.exports'])
+        var padEvents = instrumitter('left-pad').watch('.')
         var pad = require('left-pad')
         padEvents.on(':return', fn => {
             expect(fn.arguments).to.eql(['foo', 5])
@@ -115,12 +115,12 @@ describe('instrumitter', () => {
     })
     it('should throw if you try to instrument a function directly', () => {
         expect(() => {
-            instrumitter(function(){}, ['module.exports'])
+            instrumitter(function(){}).watch('.')
         }).to.throw(/instrument a function directly/)
     })
     it('should throw if you try to instrument a property that is not a function', () => {
         expect(() => {
-            instrumitter({}, ['abc'])
+            instrumitter({}).watch('abc')
         }).to.throw(/not a function/)
     })
     it('should instrument all properties of an object that are functions when using a wildcard', done => {
@@ -130,7 +130,7 @@ describe('instrumitter', () => {
             test2:123,
             test3:() => {}
         }
-        var objectEvents = instrumitter(object, ['*'])
+        var objectEvents = instrumitter(object).watch('*')
         objectEvents.on('test1:invoke', fn => {
             calls++
         }).on('test3:invoke', fn => {
@@ -143,7 +143,7 @@ describe('instrumitter', () => {
         object.test3()
     })
     it('should not reinstrument an object/function, but rather emit addtional events if they are requested', () => {
-        var httpEvents2 = instrumitter('http', ['request', 'get'])
+        var httpEvents2 = instrumitter('http').watch('request', 'get')
         expect(httpEvents2).to.equal(httpEvents)
     })
     it('should catch errors thrown by a function')

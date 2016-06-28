@@ -3,10 +3,8 @@ var util = require('./src/util')
 var resolve = require('resolve')
 var _cache = new Map()
 
-module.exports = function instrumitter(object, methods) {
+module.exports = function instrumitter(object) {
     var modulePath, instrumitter
-
-    methods = methods.concat([].slice.call(arguments, 2))
 
     if(typeof object === 'string') {
         modulePath = resolve.sync(object, { basedir:util.getCallerDirName() })
@@ -19,8 +17,6 @@ module.exports = function instrumitter(object, methods) {
         instrumitter = new Instrumitter({ object, modulePath })
         _cache.set(object, instrumitter)
     }
-
-    methods.forEach(method => instrumitter.capture(method))
 
     return instrumitter
 }

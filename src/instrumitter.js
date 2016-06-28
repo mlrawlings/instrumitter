@@ -4,6 +4,7 @@ var EventEmitter = require('events').EventEmitter
 var util = require('./util')
 var wrapFn = util.wrapFn
 var isFunction = util.isFunction
+var forEach = [].forEach;
 
 module.exports = class Instrumitter extends EventEmitter {
     constructor(input) {
@@ -13,41 +14,41 @@ module.exports = class Instrumitter extends EventEmitter {
         this.methods = {}
     }
 
-    capture(methodName) {
-        if(this.methods[methodName]) return
+    watch() {
+        forEach.call(arguments, methodName => {
+            if(this.methods[methodName]) return
 
-        var method = this.methods[methodName] = { fn:methodName }
-        var parent = this.object
-        var key = methodName
+            var method = this.methods[methodName] = { fn:methodName }
+            var parent = this.object
+            var key = methodName
 
-        if(methodName === '*') {
-            return Object.keys(this.object).forEach(key => {
-                if(isFunction(this.object[key])) {
-                    this.capture(key)
-                }
-            })
-        }
+            if(methodName === '*') {
+                return Object.keys(this.object).forEach(key => {
+                    if(isFunction(this.object[key])) {
+                        this.watch(key)
+                    }
+                })
+            }
 
-        if(methodName === 'module.exports') {
-            if(!this.modulePath) throw new Error(
-                'You cannot instrument a function directly.  ' +
-                'You must pass an object that the function is ' +
-                'a property of, or the path to the module that ' +
-                'exports the function.'
+            if(methodName === '.') {
+                if(!this.modulePath) throw new Error(
+                    'You cannot instrument a function directly.  ' +
+                    'You must pass an object that the function is ' +
+                    'a property of, or the path to the module that ' +
+                    'exports the function.'
+                )
+                method.fn = ''
+                parent = require.cache[this.modulePath]
+                key = 'exports'
+            }
+
+            if(!isFunction(parent[key])) throw new Error(
+                'The property you are trying to instrument is not a function'
             )
-            method.fn = ''
-            parent = require.cache[this.modulePath]
-            key = 'exports'
-        }
 
-        if(!isFunction(parent[key])) {
-            console.log(methodName, key, parent)
-            throw new Error(
-            'The property you are trying to instrument is not a function'
-        )
-    }
-
-        parent[key] = wrapFn(parent[key], method, this)
+            parent[key] = wrapFn(parent[key], method, this)
+        })
+        return this
     }
 
     on(event, options, listener) {
@@ -80,7 +81,7 @@ module.exports = class Instrumitter extends EventEmitter {
 
         var methodName = parts[0]
         var methodEvent = parts[1]
-        var method = this.methods[methodName||'module.exports']
+        var method = this.methods[methodName||'.']
 
         if(!method) {
             return console.warn('Capturing of '+methodName+' has not been set up')

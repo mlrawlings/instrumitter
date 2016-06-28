@@ -13,7 +13,7 @@ npm install instrumitter
 
 ```js
 var instrumitter = require('instrumitter');
-var httpEvents = instrumitter('http', ['get'])
+var httpEvents = instrumitter('http').watch('get')
 
 // now we can listen for any time require('http').get is called
 // and get information about its return value and callback value
@@ -32,20 +32,49 @@ httpEvents
 
 Instrumitter exposes a single function with the following signature:
 
-```cpp
-instrumitter(object, methods)
+```js
+instrumitter(object)
 ```
 
-- **`object`**: An object that has a function as a property that we want to listen to.
-    - If `object` is a string, it will be treated as a path to require a module
-- **`events`**: An array of strings specifying the methods to capture.
-    - A wild card method name can be to capture all methods: `*`
+`object` is an object that has a function as a property (or properties) that we want to listen to. If `object` is a string, it will be treated as a path to require a module.
+
+### Methods
+
+Once you have an instrumitter, you can call methods on it:
+
+#### `watch`
+
+```js
+myInstrumitter.watch(method1, method2, method3, ..., methodN)
+```
+
+The method names passed to `watch` are properties of the object for which the instrumitter was created.  You can pass any number of arguments to watch.  The value `*` as an argument will watch all properties of the object that are functions.  The value `.` as an argument will watch the object itself (assuming it is a function).
+
+`watch` returns the instrumitter it was called on, so it can be easily used in an assignment statement when setting up the instrumitter:
+
+```js
+var httpEvents = instrumitter('http').watch('get', 'post')
+```
+
+> NOTE: to directly watch a function the instrumitter must be created by passing the path to a module that exports the function.
+
+#### `on` & `once`
+
+For the most part, these events follow the [EventEmitter](https://nodejs.org/api/events.html#events_class_eventemitter) spec, but allow passing options and listening to an event actually triggers additional work to be done in order to emit that event.  Most notably, the `:callback` event causes the last function argument to be wrapped so that we can get the data that is passed to it.
+
+```js
+myInstrumitter.on(event[, options], handler)
+```
+
+- **`event`**: the methodName/eventName combo to watch (ex. `get:return` to watch the return event of the get method)
+- **`options`**: an optional [options](#options) object
+- **`handler`**: the function to handle the event
 
 ### Events
 
 Instrumitter supports four events: `invoke`, `return`, `callback`, and `promise`.  The data object that is emitted for the `invoke` event will be the same data object that is passed to subsequent events, but each event will add its own data to the object.
 
-#### invoke
+#### `:invoke`
 
 `invoke` is emitted at the time that the function is called.
 At this point the emitted data looks like this:
@@ -60,7 +89,7 @@ At this point the emitted data looks like this:
 > NOTE: To get the best measure of how long a function call takes, we do not
 > capture the start time until after all handlers for the invoke event have finished
 
-#### return
+#### `:return`
 
 `return` is emitted directly following the completion of the function call.  
 A `return` object will be added to the emitted data:
@@ -79,7 +108,7 @@ A `return` object will be added to the emitted data:
 }
 ```
 
-#### callback
+#### `:callback`
 
 `callback` will be emitted when the callback to a function is called
 and will contain the following data:
@@ -106,7 +135,7 @@ and will contain the following data:
 }
 ```
 
-#### promise
+#### `:promise`
 
 `promise` will be emitted when the promise returned from the function is resolved
 and will contain the following data:
@@ -138,7 +167,7 @@ and will contain the following data:
 Because adding stack traces introduces a bit more overhead they are disabled by default.  You can turn them on when you listen to your instrumitter by adding `stack:true` to an options object:
 
 ```js
-var httpEvents = instrumitter('http', ['get']);
+var httpEvents = instrumitter('http').watch('get');
 httpEvents.on('get:return', { stack:true }, function(fn) {
     console.log(fn.stack)
 })
@@ -163,7 +192,7 @@ Capturing the methods of a class that is exported by a module:
 
 ```js
 var instrumitter = require('instrumitter');
-var FooEvents = instrumitter(require('./Foo').prototype, ['bar'])
+var FooEvents = instrumitter(require('./Foo').prototype).watch('bar')
 
 FooEvents.on('bar:return', function(fn) {
     console.log(fn.return.value)
@@ -174,7 +203,7 @@ Capturing a function exported by a module:
 
 ```js
 var instrumitter = require('instrumitter');
-var doSomethingEvents = instrumitter('./doSomething', ['module.exports'])
+var doSomethingEvents = instrumitter('./doSomething').watch('.')
 
 doSomethingEvents.on(':return', function(fn) {
     console.log(fn.return.value)
