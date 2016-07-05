@@ -146,5 +146,22 @@ describe('instrumitter', () => {
         var httpEvents2 = instrumitter('http').watch('request', 'get')
         expect(httpEvents2).to.equal(httpEvents)
     })
-    it('should catch errors thrown by a function')
+    it('should catch errors thrown by a function', done => {
+        var object = {
+            test:function() {
+                throw new Error('test')
+            }
+        }
+
+        var objectEvents = instrumitter(object).watch('test')
+        objectEvents.once('test:return', fn => {
+            expect(fn.arguments).to.eql(['abc'])
+            expect(fn.return.value).to.not.exist
+            expect(fn.return.error.message).to.equal('test')
+            expect(fn.return.elapsed).to.be.above(0)
+            done()
+        })
+
+        expect(() => object.test('abc')).to.throw(/test/)
+    })
 })

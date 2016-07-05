@@ -12,10 +12,15 @@ var wrapFn = exports.wrapFn = function(fn, options, instrumitter) {
 
         var args = data.arguments
         var before = process.hrtime()
-        var result = fn.apply(this, args)
-        var after = process.hrtime()
-
-        handleReturnEvent(data, options, instrumitter, result, before, after)
+        try {
+            var result = fn.apply(this, args)
+            var after = process.hrtime()
+            handleReturnEvent(data, options, instrumitter, result, before, after)
+        } catch(error) {
+            var after = process.hrtime()
+            handleReturnEventError(data, options, instrumitter, error, before, after)
+            throw error
+        }
         handlePromiseEvent(data, options, instrumitter)
 
         return result
@@ -39,6 +44,16 @@ var handleInvokeEvent = exports.handleInvokeEvent = function(data, options, inst
 var handleReturnEvent = exports.handleReturnEvent = function(data, options, instrumitter, result, before, after) {
     data.time = hrTimeToMilliSeconds(before)
     data.return = { value:result, time:hrTimeToMilliSeconds(after) }
+    data.return.elapsed = data.return.time - data.time
+
+    if(options.return) {
+        instrumitter.emit(options.fn+':return', data)
+    }
+}
+
+var handleReturnEventError = exports.handleReturnEventError = function(data, options, instrumitter, error, before, after) {
+    data.time = hrTimeToMilliSeconds(before)
+    data.return = { error, time:hrTimeToMilliSeconds(after) }
     data.return.elapsed = data.return.time - data.time
 
     if(options.return) {
