@@ -20,3 +20,5 @@ module.exports = function instrumitter(object) {
 
     return instrumitter
 }
+
+module.exports.time = require('time-ms')

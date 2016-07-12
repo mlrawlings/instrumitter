@@ -54,7 +54,16 @@ describe('instrumitter', () => {
             done()
         })
     })
-    it('should force a callback when the `:callback` event is requested')
+    it('should allow forcing a callback when the `:callback` event is requested', done => {
+        var http = require('http')
+        httpEvents.once('get:callback', { forceCallback:true }, fn => {
+            expect(fn.callback.arguments.length).to.equal(1)
+            expect(fn.callback.arguments[0]).to.be.instanceof(http.IncomingMessage)
+            expect(fn.callback.elapsed).to.be.above(0)
+            done()
+        })
+        http.get('http://www.google.com')
+    })
     it('should handle promises', done => {
         var object = {
             test: function() {

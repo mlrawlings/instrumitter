@@ -1,4 +1,5 @@
 var path = require('path')
+var timeMs = require('time-ms')
 
 var wrapFn = exports.wrapFn = function(fn, options, instrumitter) {
     var wrappedFn = function() {
@@ -11,13 +12,13 @@ var wrapFn = exports.wrapFn = function(fn, options, instrumitter) {
         handleCallbackEvent(data, options, instrumitter)
 
         var args = data.arguments
-        var before = process.hrtime()
+        var before = timeMs()
         try {
             var result = fn.apply(this, args)
-            var after = process.hrtime()
+            var after = timeMs()
             handleReturnEvent(data, options, instrumitter, result, before, after)
         } catch(error) {
-            var after = process.hrtime()
+            var after = timeMs()
             handleReturnEventError(data, options, instrumitter, error, before, after)
             throw error
         }
@@ -42,8 +43,8 @@ var handleInvokeEvent = exports.handleInvokeEvent = function(data, options, inst
 }
 
 var handleReturnEvent = exports.handleReturnEvent = function(data, options, instrumitter, result, before, after) {
-    data.time = hrTimeToMilliSeconds(before)
-    data.return = { value:result, time:hrTimeToMilliSeconds(after) }
+    data.time = before
+    data.return = { value:result, time:after }
     data.return.elapsed = data.return.time - data.time
 
     if(options.return) {
@@ -52,8 +53,8 @@ var handleReturnEvent = exports.handleReturnEvent = function(data, options, inst
 }
 
 var handleReturnEventError = exports.handleReturnEventError = function(data, options, instrumitter, error, before, after) {
-    data.time = hrTimeToMilliSeconds(before)
-    data.return = { error, time:hrTimeToMilliSeconds(after) }
+    data.time = before
+    data.return = { error, time:after }
     data.return.elapsed = data.return.time - data.time
 
     if(options.return) {
@@ -65,14 +66,14 @@ var handleCallbackEvent = exports.handleCallbackEvent = function(data, options, 
     var args = data.arguments
     var callback = args[args.length-1]
 
-    if(options.callback && !isFunction(callback)) {
+    if(options.callback && options.forceCallback && !isFunction(callback)) {
         callback = function(){}
-        args = args.push(callback)
+        args.push(callback)
     }
 
     if(options.callback && isFunction(callback)) {
         args[args.length-1] = function() {
-            var time = hrTimeToMilliSeconds(process.hrtime())
+            var time = timeMs()
             data.callback = {
                 this:this,
                 arguments:Array.from(arguments),
@@ -92,7 +93,7 @@ var handlePromiseEvent = exports.handlePromiseEvent = function(data, options, in
 
     if(isPromise(result) && options.promise) {
         result.then(function(value) {
-            var time = hrTimeToMilliSeconds(process.hrtime())
+            var time = timeMs()
             data.promise = {
                 time,
                 value,
@@ -100,7 +101,7 @@ var handlePromiseEvent = exports.handlePromiseEvent = function(data, options, in
             }
             instrumitter.emit(options.fn+':promise', data)
         }).catch(function(error) {
-            var time = hrTimeToMilliSeconds(process.hrtime())
+            var time = timeMs()
             data.promise = {
                 time,
                 error,
@@ -142,10 +143,6 @@ var getCallStack = exports.getCallStack = function(levelsAbove) {
             char:callsite.getColumnNumber()
         }
     })
-}
-
-var hrTimeToMilliSeconds = exports.hrTimeToMilliSeconds = function(time) {
-    return time[0] * 1e3 + time[1]/1e6
 }
 
 var copyFnProperties = exports.copyFnProperties = function(target, source) {
