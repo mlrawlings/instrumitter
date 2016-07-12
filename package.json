@@ -1,6 +1,6 @@
 {
   "name": "instrumitter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Instrument your node.js code and emit data about what's happening",
   "main": "index.js",
   "scripts": {
